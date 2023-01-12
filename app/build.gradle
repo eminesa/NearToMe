@@ -4,6 +4,7 @@ plugins {
     id 'kotlin-parcelize'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
+    id 'com.huawei.agconnect'
     //id "com.google.gms.google-services"
 }
 
@@ -82,4 +83,6 @@ dependencies {
     implementation "com.google.dagger:hilt-android:2.44"
     kapt "com.google.dagger:hilt-compiler:2.44"
 
+    // hms app gallery connect kit
+    implementation "com.huawei.agconnect:agconnect-core:1.7.3.300"
 }

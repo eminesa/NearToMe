@@ -3,10 +3,10 @@ package com.eminesa.neartome
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.eminesa.neartome.enum.ResponseStatus
 import com.eminesa.neartome.fragment.NearByViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.activity.*
+import com.eminesa.neartome.enum.ResponseStatus
 import com.eminesa.neartome.request.NearByRequest
 
 @AndroidEntryPoint
@@ -17,8 +17,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
-        /*
+
+
             val request = NearByRequest("okul", "41", "29")
             viewModel.getNearBy(request).observe(this) { responseVersion ->
                 when (responseVersion.status) {
@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
                         Log.i("NEAR_BY_REQUEST", "LOADING")
                     }
                     ResponseStatus.SUCCESS -> {
-                        val size = responseVersion.data?.result?.size
+                        Log.e("NEAR_BY_REQUEST", "SUCCESS")
                     }
                     ResponseStatus.ERROR -> {
                         Log.e("NEAR_BY_REQUEST", "ERROR")
@@ -34,20 +34,19 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-
          viewModel.getPharmacy("Ankara", "Ulus").observe(this) { responseVersion ->
                 when (responseVersion.status) {
                     ResponseStatus.LOADING -> {
-                        Log.i("NEAR_BY_REQUEST", "LOADING")
+                        Log.i("PHARMACY_RESULT", "LOADING")
                     }
                     ResponseStatus.SUCCESS -> {
-                        val size = responseVersion.data?.result?.size
+                        Log.e("PHARMACY_RESULT", "SUCCESS")
                     }
                     ResponseStatus.ERROR -> {
-                        Log.e("NEAR_BY_REQUEST", "ERROR")
+                        Log.e("PHARMACY_RESULT", "ERROR")
                     }
                 }
-            }*/
+            }
 
     }
 }
