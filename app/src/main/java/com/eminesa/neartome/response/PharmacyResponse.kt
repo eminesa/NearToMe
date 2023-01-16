@@ -1,4 +1,4 @@
-package com.eminesa.neartome.response
+package dailyofspace.eminesa.dailyofspace.network
 
 import android.os.Parcelable
 import com.squareup.moshi.Json
@@ -6,32 +6,54 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class PharmacyResponse(
+    @field:Json(name = "status")
+    val status: String? = null,
 
-    @field:Json(name = "success")
-    val success: Boolean? = null,
+    @field:Json(name = "message")
+    val message: String? = null,
 
-    @field:Json(name = "result")
-    val result: List<Pharmacy>? = null,
+    @field:Json(name = "rowCount")
+    val rowCount: String? = null,
 
-    ) : Parcelable
+    @field:Json(name = "systemTime")
+    val systemTime: Int? = null,
+
+    @field:Json(name = "data")
+    val data:  List<Pharmacy>? = null,
+
+    ): Parcelable
+
 
 @Parcelize
 data class Pharmacy(
+    @field:Json(name = "EczaneAdi")
+    val EczaneAdi: String?,
 
-    @field:Json(name = "name")
-    val name: String? = null,
+    @field:Json(name = "Adresi")
+    val Adresi: String?,
 
-    @field:Json(name = "dist")
-    val dist: String? = null,
+    @field:Json(name = "Semt")
+    val Semt: String?,
 
-    @field:Json(name = "address")
-    val address: String? = null,
+    @field:Json(name = "YolTarifi")
+    val YolTarifi: String?,
 
-    @field:Json(name = "phone")
-    val phone: String? = null,
+    @field:Json(name = "Telefon")
+    val Telefon: String?,
 
-    @field:Json(name = "loc")
-    val loc: String? = null,
+    @field:Json(name = "Telefon2")
+    val Telefon2: String?,
 
-    ) : Parcelable
+    @field:Json(name = "Sehir")
+    val Sehir: String?,
 
+    @field:Json(name = "ilce")
+    val ilce: String?,
+
+    @field:Json(name = "latitude")
+    val latitude: Double?,
+
+    @field:Json(name = "longitude")
+    val longitude: Double?,
+
+    ): Parcelable
