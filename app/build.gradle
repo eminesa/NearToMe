@@ -76,6 +76,9 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment-ktx:2.5.3"
     implementation "androidx.navigation:navigation-ui-ktx:2.5.3"
 
+    // for splash screen gif
+    implementation "com.airbnb.android:lottie:3.7.0"
+
     // for memory leak in debug control
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 
@@ -85,4 +88,9 @@ dependencies {
 
     // hms app gallery connect kit
     implementation "com.huawei.agconnect:agconnect-core:1.7.3.300"
+
+    // Auth Service
+    implementation 'com.huawei.hms:hwid:6.8.0.300'
+    implementation "com.huawei.agconnect:agconnect-core:1.7.3.300"
+    implementation "com.huawei.agconnect:agconnect-auth:1.7.3.300"
 }

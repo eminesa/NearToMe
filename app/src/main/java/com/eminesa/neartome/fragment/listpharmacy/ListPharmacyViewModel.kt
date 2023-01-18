@@ -1,4 +1,4 @@
-package com.eminesa.neartome.fragment
+package com.eminesa.neartome.fragment.listpharmacy
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 
 @HiltViewModel
-class NearByViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
+class ListPharmacyViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
 
     fun getPharmacy(il: String?, ilce: String?): LiveData<GlobalResponse<out PharmacyResponse>> =
         liveData(context = viewModelScope.coroutineContext + Dispatchers.IO) {

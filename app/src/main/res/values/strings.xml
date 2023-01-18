@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">NearToMe</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="welcome_to_space">Welcome</string>
+    <string name="be_safe">Be Safe</string>
+    <string name="login_with_huawei">Login With Huawei ID</string>
 </resources>
