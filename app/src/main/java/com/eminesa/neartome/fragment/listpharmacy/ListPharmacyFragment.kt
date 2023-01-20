@@ -1,17 +1,14 @@
 package com.eminesa.neartome.fragment.listpharmacy
 
 import android.os.Bundle
-import android.text.TextUtils
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.SnapHelper
 import com.eminesa.neartome.R
@@ -38,23 +35,25 @@ class ListPharmacyFragment : Fragment() {
 
         if (pharmacyAdapter == null)
             pharmacyAdapter = PharmacyAdapter(itemClickListener = { _, item ->
-               findNavController().navigate(R.id.action_listPharmacyFragment_to_pharmacyDetailFragment,  bundleOf(
-                   "pharmacyName" to item.EczaneAdi,
-                   "latitude" to item.latitude,
-                   "longitude" to item.longitude,
-                   "city" to item.Sehir,
-                   "county" to item.ilce,
-               ))
+                findNavController().navigate(
+                    R.id.action_listPharmacyFragment_to_pharmacyDetailFragment, bundleOf(
+                        "pharmacyName" to item.EczaneAdi,
+                        "latitude" to item.latitude,
+                        "longitude" to item.longitude,
+                        "city" to item.Sehir,
+                        "county" to item.ilce,
+                    )
+                )
             })
 
         binding?.recyclerViewPharmacy?.apply {
             setHasFixedSize(false)
-           /* addItemDecoration(
-                DividerItemDecoration(
-                    requireContext(),
-                    DividerItemDecoration.VERTICAL
-                )
-            ) */
+            /* addItemDecoration(
+                 DividerItemDecoration(
+                     requireContext(),
+                     DividerItemDecoration.VERTICAL
+                 )
+             )*/
             adapter = pharmacyAdapter
         }
 
@@ -66,7 +65,7 @@ class ListPharmacyFragment : Fragment() {
     }
 
     private fun getPharmacy() {
-        viewModel.getPharmacy("istanbul", "avcilar")
+        viewModel.getPharmacy("istanbul", "")
             .observe(viewLifecycleOwner) { responseVersion ->
                 when (responseVersion.status) {
                     ResponseStatus.LOADING -> {
