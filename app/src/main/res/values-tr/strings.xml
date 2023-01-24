@@ -5,4 +5,6 @@
     <string name="welcome_to_space">Hoş Geldiniz</string>
     <string name="be_safe">Saglikla Kalin</string>
     <string name="login_with_huawei">Huawei ID ile Giris Yap</string>
+    <string name="enter_city_name">Sehir ismi giriniz</string>
+
 </resources>

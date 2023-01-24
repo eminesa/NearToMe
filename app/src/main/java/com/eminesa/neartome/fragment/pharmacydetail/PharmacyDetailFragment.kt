@@ -1,28 +1,43 @@
 package com.eminesa.neartome.fragment.pharmacydetail
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.eminesa.neartome.databinding.FragmentPharmacyDetailBinding
+import com.eminesa.neartome.enum.ResponseStatus
+import com.eminesa.neartome.fragment.listpharmacy.ListPharmacyViewModel
+import com.eminesa.neartome.network.DirectionsBaseRepo
+import com.eminesa.neartome.request.DirectionsRequest
+import com.eminesa.neartome.request.LatLngData
+import com.eminesa.neartome.response.DirectionsResponse
+import com.eminesa.neartome.response.Paths
 import com.huawei.hms.maps.CameraUpdateFactory
 import com.huawei.hms.maps.HuaweiMap
 import com.huawei.hms.maps.MapsInitializer
 import com.huawei.hms.maps.OnMapReadyCallback
 import com.huawei.hms.maps.model.*
+import dagger.hilt.android.AndroidEntryPoint
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
-
+@AndroidEntryPoint
 class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
 
+    private val viewModel: ListPharmacyViewModel by viewModels()
     private var binding: FragmentPharmacyDetailBinding? = null
     private var marker: Marker? = null
+    var mPolyline:Polyline?= null
+
     private val requestCode = 100
     private val runTimePermission = arrayOf(
         Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -59,6 +74,14 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
             getMapAsync(this@PharmacyDetailFragment)
         }
 
+        if (arguments != null) {
+            val city = arguments?.getString("city")
+            val county = arguments?.getString("county")
+
+            getPharmacy(city, county)
+        }
+        // getDirection("DAEDAOPYUdPj7qvHfqJQFbNElDN12UMUGOCv6dl4F54eOONr5x9QUlXQh9H81Fmu9hpKGmPz89EzFViggby52iXI4KYVU6hEalBBDQ==",directionsRequest)
+
         return binding?.root
     }
 
@@ -77,6 +100,80 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
         return true
     }
 
+    private fun getPharmacy(city: String?, county: String?) {
+        viewModel.getPharmacy(city, county)
+            .observe(viewLifecycleOwner) { responseVersion ->
+                when (responseVersion.status) {
+                    ResponseStatus.LOADING -> {
+                        //internet kontrolu saglaman lazim
+                    }
+                    ResponseStatus.SUCCESS -> {
+                        val firstPharmacy = responseVersion.data?.data?.first()
+                        val build = CameraPosition.Builder()
+                            .target(firstPharmacy?.latitude?.let {
+                                firstPharmacy.longitude?.let { it1 ->
+                                    LatLng(
+                                        it,
+                                        it1
+                                    )
+                                }
+                            }).zoom(10f)
+                            .build()
+                        val cameraUpdate = CameraUpdateFactory.newCameraPosition(build)
+                        hMap?.animateCamera(cameraUpdate)
+
+                        responseVersion.data?.data?.map { pharmacy ->
+
+                            marker = hMap?.addMarker(
+                                MarkerOptions()
+                                    .icon(BitmapDescriptorFactory.defaultMarker()) // default marker
+                                    .title(pharmacy.EczaneAdi) // maker title
+                                    .position(pharmacy.latitude?.let {
+                                        pharmacy.longitude?.let { it1 ->
+                                            LatLng(
+                                                it,
+                                                it1
+                                            )
+                                        }
+                                    })
+                            )
+                        }
+
+                        Log.i("RESPONSE", responseVersion.data?.data.toString())
+                    }
+                    ResponseStatus.ERROR -> {
+                        Log.e("RESPONSE", "ERROR")
+                    }
+                }
+            }
+    }
+
+    private fun getDirections(
+        type: String,
+        directionRequest: DirectionsRequest,
+        callback: (item: Response<DirectionsResponse>) -> Unit
+    ) {
+        DirectionsBaseRepo().getInstance()?.getPipeLine(type, directionRequest)
+            ?.enqueue(object :
+                Callback<DirectionsResponse> {
+                override fun onFailure(call: Call<DirectionsResponse>, t: Throwable) {
+                    Log.d("TAG", "ERROR DIRECTIONS" + t.message)
+                }
+
+                override fun onResponse(
+                    call: Call<DirectionsResponse>,
+                    response: Response<DirectionsResponse>
+                ) {
+                    Log.d("TAG", "success DIRECTIONS" + response.message())
+                    if (response.isSuccessful) {
+                        response.body()?.let {
+                            callback.invoke(response)
+                        }
+                    }
+                }
+            })
+    }
+
     override fun onMapReady(map: HuaweiMap?) {
         hMap = map
         if (hasPermissions(runTimePermission[0], runTimePermission[1])) {
@@ -88,45 +185,47 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
         // Enable the my-location icon.
         hMap?.uiSettings?.isMyLocationButtonEnabled = true
 
-        if (arguments != null) {
-            val pharmacyName = arguments?.getString("pharmacyName")
-            val latitude = arguments?.getDouble("latitude")
-            val longitude = arguments?.getDouble("longitude")
+        hMap?.setOnMarkerClickListener { marker ->
 
-            val build = CameraPosition.Builder()
-                .target(latitude?.let { longitude?.let { it1 -> LatLng(it, it1) } }).zoom(10f)
-                .build()
-            val cameraUpdate = CameraUpdateFactory.newCameraPosition(build)
-            hMap?.animateCamera(cameraUpdate)
+            var origin : LatLngData?= null
 
-
-            hMap?.setOnMarkerClickListener { marker ->
-
-                val contentUrl: Uri =
-                    Uri.parse("https://www.petalmaps.com/navigate/?saddr=$latitude&daddr=$longitude&type=drive&utm_source=fb")
-                val intent = Intent(Intent.ACTION_VIEW, contentUrl)
-                if (intent.resolveActivity(requireActivity().packageManager) != null) {
-                    startActivity(intent)
-                }
-                //Log.d("TAG", "Clicked marker ${marker.title}")
-                true
+            hMap?.setOnMyLocationClickListener { location ->
+                origin = LatLngData(location.latitude,  location.longitude)
             }
 
-            marker = hMap?.addMarker(
-                MarkerOptions()
-                    .icon(BitmapDescriptorFactory.defaultMarker()) // default marker
-                    .title(pharmacyName) // maker title
-                    .position(latitude?.let {
-                        longitude?.let { it1 ->
-                            LatLng(
-                                it,
-                                it1
-                            )
-                        }
-                    }) // marker position
-            )
-
+            val destination = LatLngData(marker.position.latitude, marker.position.longitude)
+            val directionRequest = DirectionsRequest(origin, destination)
+            getDirections(
+                "DAEDAOPYUdPj7qvHfqJQFbNElDN12UMUGOCv6dl4F54eOONr5x9QUlXQh9H81Fmu9hpKGmPz89EzFViggby52iXI4KYVU6hEalBBDQ==",
+                directionRequest
+            ) { response ->
+                  response.body()?.routes?.forEach { routes ->
+                      routes.paths?.forEach { paths ->
+                          addPolyLines(paths)
+                      }
+                  }
+            }
+            true
         }
+    }
+
+    private fun addPolyLines(path : Paths){
+
+        if (null != mPolyline) {
+            mPolyline?.remove()
+            mPolyline = null
+        }
+        val options = PolylineOptions()
+
+        options.add(LatLng(path.startLocation.lat, path.startLocation.lng))
+        path.steps.forEach{
+            it.polyline.forEach {it1->
+                options.add(LatLng(it1.lat, it1.lng))
+            }
+        }
+        options.add(LatLng(path.endLocation.lat, path.endLocation.lng))
+        options.color(Color.BLUE)
+        options.width(10f)
 
     }
 
@@ -172,6 +271,7 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
 
     override fun onDestroy() {
         super.onDestroy()
+        binding?.mapView?.onDestroy()
         binding = null
         hMap = null
         marker = null
