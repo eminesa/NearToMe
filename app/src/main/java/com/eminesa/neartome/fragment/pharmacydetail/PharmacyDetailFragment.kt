@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -20,6 +21,9 @@ import com.eminesa.neartome.request.DirectionsRequest
 import com.eminesa.neartome.request.LatLngData
 import com.eminesa.neartome.response.DirectionsResponse
 import com.eminesa.neartome.response.Paths
+import com.huawei.hmf.tasks.OnFailureListener
+import com.huawei.hmf.tasks.OnSuccessListener
+import com.huawei.hms.location.*
 import com.huawei.hms.maps.CameraUpdateFactory
 import com.huawei.hms.maps.HuaweiMap
 import com.huawei.hms.maps.MapsInitializer
@@ -36,13 +40,18 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
     private val viewModel: ListPharmacyViewModel by viewModels()
     private var binding: FragmentPharmacyDetailBinding? = null
     private var marker: Marker? = null
-    var mPolyline:Polyline?= null
+    private var mPolyline: Polyline? = null
+    private var mLocationRequest: LocationRequest? = null
+    private var origin: LatLngData? = null
+
+    // Define a fusedLocationProviderClient object.
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
 
     private val requestCode = 100
     private val runTimePermission = arrayOf(
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
+        Manifest.permission.READ_EXTERNAL_STORAGE,
     )
 
     private var hMap: HuaweiMap? = null
@@ -148,6 +157,68 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
             }
     }
 
+    private fun getLocation() {
+        val settingsClient = LocationServices.getSettingsClient(requireContext())
+
+        val builder = LocationSettingsRequest.Builder()
+        mLocationRequest = LocationRequest()
+        builder.addLocationRequest(mLocationRequest)
+        val locationSettingsRequest = builder.build()
+        settingsClient.checkLocationSettings(locationSettingsRequest)
+            .addOnSuccessListener { locationSettingsResponse ->
+                val locationSettingsStates = locationSettingsResponse.locationSettingsStates
+                val stringBuilder = StringBuilder()
+                stringBuilder.append("isLocationUsable=")
+                    .append(locationSettingsStates.isLocationUsable)
+                stringBuilder.append(",\nisHMSLocationUsable=")
+                    .append(locationSettingsStates.isHMSLocationUsable)
+                Log.i("TAG", "checkLocationSetting onComplete:$stringBuilder")
+            }
+            .addOnFailureListener { e ->
+                Log.i("TAG", "checkLocationSetting onFailure:" + e.message)
+            }
+
+
+        fusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(requireContext())
+
+        val mLocationRequest = LocationRequest()
+        mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        mLocationRequest.numUpdates = 1
+
+        val mLocationCallback: LocationCallback
+        mLocationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                origin = LatLngData(
+                    locationResult.locations.first().latitude,
+                    locationResult.locations.first().longitude
+                )
+                val destination = LatLngData(marker?.position!!.latitude , marker?.position!!.longitude)
+                val directionRequest = DirectionsRequest(origin, destination)
+                getDirections(
+                    "DAEDAOPYUdPj7qvHfqJQFbNElDN12UMUGOCv6dl4F54eOONr5x9QUlXQh9H81Fmu9hpKGmPz89EzFViggby52iXI4KYVU6hEalBBDQ==",
+                    directionRequest
+                ) { response ->
+                    response.body()?.routes?.forEach { routes ->
+                        routes.paths?.forEach { paths ->
+                            addPolyLines(paths)
+                        }
+                    }
+                }
+            }
+        }
+
+        fusedLocationProviderClient?.requestLocationUpdates(
+            mLocationRequest,
+            mLocationCallback,
+            Looper.getMainLooper()
+        )?.addOnSuccessListener {
+            Log.i("Listener Calback", "addOnSuccessListener")
+        }?.addOnFailureListener {
+            Log.e("Listener Calback", "addOnFailureListener")
+        }
+    }
+
     private fun getDirections(
         type: String,
         directionRequest: DirectionsRequest,
@@ -187,29 +258,14 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
 
         hMap?.setOnMarkerClickListener { marker ->
 
-            var origin : LatLngData?= null
+            getLocation()
 
-            hMap?.setOnMyLocationClickListener { location ->
-                origin = LatLngData(location.latitude,  location.longitude)
-            }
-
-            val destination = LatLngData(marker.position.latitude, marker.position.longitude)
-            val directionRequest = DirectionsRequest(origin, destination)
-            getDirections(
-                "DAEDAOPYUdPj7qvHfqJQFbNElDN12UMUGOCv6dl4F54eOONr5x9QUlXQh9H81Fmu9hpKGmPz89EzFViggby52iXI4KYVU6hEalBBDQ==",
-                directionRequest
-            ) { response ->
-                  response.body()?.routes?.forEach { routes ->
-                      routes.paths?.forEach { paths ->
-                          addPolyLines(paths)
-                      }
-                  }
-            }
             true
         }
     }
 
-    private fun addPolyLines(path : Paths){
+
+    private fun addPolyLines(path: Paths) {
 
         if (null != mPolyline) {
             mPolyline?.remove()
@@ -218,15 +274,15 @@ class PharmacyDetailFragment : Fragment(), OnMapReadyCallback {
         val options = PolylineOptions()
 
         options.add(LatLng(path.startLocation.lat, path.startLocation.lng))
-        path.steps.forEach{
-            it.polyline.forEach {it1->
+        path.steps.forEach {
+            it.polyline.forEach { it1 ->
                 options.add(LatLng(it1.lat, it1.lng))
             }
         }
         options.add(LatLng(path.endLocation.lat, path.endLocation.lng))
         options.color(Color.BLUE)
         options.width(10f)
-
+        hMap?.addPolyline(options)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
